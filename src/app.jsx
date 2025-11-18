@@ -51,10 +51,15 @@ function App() {
           const formData = new FormData();
           formData.append("file", blob, "recording.webm");
 
-          const res = await fetch("http://localhost:8000/api/analyze", {
-            method: "POST",
-            body: formData,
-          });
+          const API_BASE =
+          import.meta.env.MODE === "development"
+            ? "http://localhost:8000"
+            : "https://edulog-backend-wtnu.onrender.com/";
+
+        const res = await fetch(`${API_BASE}/api/analyze`, {
+          method: "POST",
+          body: formData,
+        });
 
           const text = await res.text();
           console.log("status:", res.status);
