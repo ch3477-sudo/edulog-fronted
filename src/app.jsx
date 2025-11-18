@@ -56,10 +56,13 @@ function App() {
             ? "http://localhost:8000"
             : "edulog-backend-wtnu.onrender.com";
 
-        const res = await fetch(`${API_BASE}/api/analyze`, {
-          method: "POST",
-          body: formData,
-        });
+          const url = `${API_BASE}/api/analyze`;
+          console.log("calling backend:", url); // 디버깅용
+
+          const res = await fetch(url, {
+            method: "POST",
+            body: formData,
+          });
 
           const text = await res.text();
           console.log("status:", res.status);
