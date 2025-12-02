@@ -55,10 +55,8 @@ function App() {
           const formData = new FormData();
           formData.append("file", blob, "recording.webm");
 
-          const API_BASE =
-            import.meta.env.MODE === "development"
-              ? "https://subaquatic-maxima-pluckily.ngrok-free.dev" // "http://localhost:5000"
-              : "https://edulog-backend-wtnu.onrender.com";
+          const API_BASE = "https://subaquatic-maxima-pluckily.ngrok-free.dev";
+
 
           // 여기 이름을 requestUrl로 바꿔서 const 중복 에러 해결
           const requestUrl = `${API_BASE}/api/analyze`;
@@ -161,6 +159,7 @@ function App() {
             alignItems: "center",
             marginBottom: "24px",
           }}
+          
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div
