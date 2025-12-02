@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import html2canvas from "html2canvas";
 
 function App() {
   const mediaRecorderRef = useRef(null);
@@ -10,6 +11,9 @@ function App() {
   const [errorMsg, setErrorMsg] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [timer, setTimer] = useState(0);
+
+  // 결과 박스 PNG 저장용 ref
+  const resultSectionRef = useRef(null);
 
   // 녹음 시간 타이머
   useEffect(() => {
@@ -52,18 +56,18 @@ function App() {
           formData.append("file", blob, "recording.webm");
 
           const API_BASE =
-          import.meta.env.MODE === "development"
-            ? "http://localhost:8000"
-            : "https://edulog-backend-wtnu.onrender.com";
+            import.meta.env.MODE === "development"
+              ? "https://subaquatic-maxima-pluckily.ngrok-free.dev" // "http://localhost:5000"
+              : "https://edulog-backend-wtnu.onrender.com";
 
-            
-            const url = `${API_BASE}/api/analyze`;
-            console.log("calling backend:", url);  // 디버깅용 로그
+          // 여기 이름을 requestUrl로 바꿔서 const 중복 에러 해결
+          const requestUrl = `${API_BASE}/api/analyze`;
+          console.log("calling backend:", requestUrl);
 
-            const res = await fetch(url, {
-              method: "POST",
-              body: formData,
-            });
+          const res = await fetch(requestUrl, {
+            method: "POST",
+            body: formData,
+          });
 
           const text = await res.text();
           console.log("status:", res.status);
@@ -113,6 +117,24 @@ function App() {
     setErrorMsg("");
     setAudioUrl("");
     setTimer(0);
+  };
+
+  // 결과 PNG 저장
+  const handleSaveResultAsImage = async () => {
+    if (!resultSectionRef.current) return;
+    try {
+      const canvas = await html2canvas(resultSectionRef.current, {
+        scale: 2,
+      });
+      const dataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = "edulog_result.png";
+      a.click();
+    } catch (err) {
+      console.error(err);
+      alert("이미지 저장 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -169,7 +191,6 @@ function App() {
                 Edulog
               </div>
               <div style={{ fontSize: "11px", color: "#6b7280" }}>
-                Edulog
               </div>
             </div>
           </div>
@@ -214,6 +235,8 @@ function App() {
               result={result}
               audioUrl={audioUrl}
               onGoHome={handleGoHome}
+              onSaveResultAsImage={handleSaveResultAsImage}
+              resultSectionRef={resultSectionRef}
             />
           )}
 
@@ -241,16 +264,19 @@ function HomeView({ onStart, errorMsg }) {
   return (
     <section
       style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1fr)",
-        gap: "24px",
-        alignItems: "center",
+        maxWidth: "760px",
+        margin: "0 auto",
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        gap: "20px",
       }}
     >
+      {/* 중앙 제목 + 부제 */}
       <div>
         <h1
           style={{
-            fontSize: "26px",
+            fontSize: "28px",
             fontWeight: 800,
             letterSpacing: "-0.03em",
             marginBottom: "8px",
@@ -260,30 +286,96 @@ function HomeView({ onStart, errorMsg }) {
           <br />
           발표 습관을 데이터로 확인하세요.
         </h1>
-        <p style={{ fontSize: "13px", color: "#4b5563", marginBottom: "16px" }}>
+        <p style={{ fontSize: "13px", color: "#4b5563" }}>
           마이크로 발표를 녹음하면 AI가 말 속도, 음량, 침묵, 피치 등 6가지
-          지표를 분석하여
+          지표를 분석해
           <br />
           이해하기 쉬운 점수와 피드백으로 정리해 드립니다.
         </p>
+      </div>
 
-        <ul
+      {/* 가운데 2열: 왼쪽 기능 설명 / 오른쪽 사용 방법 */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+          gap: "16px",
+          textAlign: "left",
+        }}
+      >
+        {/* 왼쪽: 기능 설명 */}
+        <div
           style={{
+            backgroundColor: "#ffffff",
+            borderRadius: "20px",
+            padding: "16px 18px",
+            boxShadow: "0 10px 26px rgba(15,23,42,0.05)",
             fontSize: "12px",
-            color: "#374151",
-            marginBottom: "16px",
-            paddingLeft: "18px",
           }}
         >
-          <li>발화 속도(WPM)와 음량(dBFS)을 한눈에 확인</li>
-          <li>침묵 비율, 피치 변화 등 발표 습관 분석</li>
-          <li>초반/중반/후반 구간별 개선 포인트 제공</li>
-        </ul>
+          <p
+            style={{
+              fontSize: "13px",
+              fontWeight: 600,
+              marginBottom: "8px",
+            }}
+          >
+            어떤 점을 분석하나요?
+          </p>
+          <ul
+            style={{
+              paddingLeft: "18px",
+              margin: 0,
+              color: "#374151",
+              lineHeight: 1.5,
+            }}
+          >
+            <li>발화 속도(WPM)와 평균 음량(dBFS)을 수치로 확인</li>
+            <li>침묵 비율과 피치 변화로 발표 리듬 분석</li>
+            <li>초반 · 중반 · 후반 구간별 강점과 개선 포인트 제공</li>
+          </ul>
+        </div>
 
+        {/* 오른쪽: 사용 방법 */}
+        <div
+          style={{
+            backgroundColor: "#ffffff",
+            borderRadius: "20px",
+            padding: "16px 18px",
+            boxShadow: "0 10px 26px rgba(15,23,42,0.05)",
+            fontSize: "12px",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "13px",
+              fontWeight: 600,
+              marginBottom: "8px",
+            }}
+          >
+            사용 방법
+          </p>
+          <ol
+            style={{
+              paddingLeft: "18px",
+              margin: 0,
+              color: "#4b5563",
+              lineHeight: 1.5,
+            }}
+          >
+            <li>“녹음 시작하기” 버튼을 누르고 10~20초 정도 발표합니다.</li>
+            <li>“녹음 종료 &amp; 분석” 버튼을 누르면 서버에서 음성을 분석합니다.</li>
+            <li>잠시 후 지표별 점수와 피드백, 다시 듣기 기능이 표시됩니다.</li>
+          </ol>
+        </div>
+      </div>
+
+      {/* 맨 아래: 녹음 시작 버튼 */}
+      <div style={{ marginTop: "4px" }}>
         <button
           onClick={onStart}
           style={{
-            padding: "10px 20px",
+            padding: "10px 24px",
             borderRadius: "999px",
             border: "none",
             background:
@@ -302,31 +394,6 @@ function HomeView({ onStart, errorMsg }) {
             {errorMsg}
           </p>
         )}
-      </div>
-
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "24px",
-          padding: "16px",
-          boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-          fontSize: "12px",
-        }}
-      >
-        <p
-          style={{
-            fontSize: "13px",
-            fontWeight: 600,
-            marginBottom: "8px",
-          }}
-        >
-          데모 안내
-        </p>
-        <ol style={{ paddingLeft: "18px", color: "#4b5563" }}>
-          <li>“녹음 시작하기” 버튼을 눌러 10~20초 정도 말합니다.</li>
-          <li>“녹음 종료 & 분석” 버튼을 누르면 서버에서 음성을 분석합니다.</li>
-          <li>잠시 후 분석 결과와 지표별 피드백이 한 화면에 표시됩니다.</li>
-        </ol>
       </div>
     </section>
   );
@@ -356,10 +423,10 @@ function RecordingView({ isRecording, isLoading, timer, onStop, errorMsg }) {
               marginBottom: "4px",
             }}
           >
-            녹음 중입니다...
+            지금 녹음이 진행되고 있어요.
           </p>
           <p style={{ fontSize: "12px", color: "#4b5563" }}>
-            평소 발표하듯이 10~20초 정도 자연스럽게 말해 보세요.
+            실제 발표하듯이 자연스럽게 말해 주세요. 완벽하지 않아도 괜찮습니다.
           </p>
           <div
             style={{
@@ -417,7 +484,13 @@ function RecordingView({ isRecording, isLoading, timer, onStop, errorMsg }) {
   );
 }
 
-function ResultView({ result, audioUrl, onGoHome }) {
+function ResultView({
+  result,
+  audioUrl,
+  onGoHome,
+  onSaveResultAsImage,
+  resultSectionRef,
+}) {
   if (!result) return null;
 
   const m = result.metrics || {};
@@ -434,6 +507,7 @@ function ResultView({ result, audioUrl, onGoHome }) {
 
   return (
     <section
+      ref={resultSectionRef}
       style={{
         width: "100%",
         maxWidth: "960px",
@@ -456,16 +530,17 @@ function ResultView({ result, audioUrl, onGoHome }) {
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <button
+            onClick={onSaveResultAsImage}
             style={{
               padding: "8px 16px",
               borderRadius: "999px",
               border: "1px solid #e5e7eb",
               backgroundColor: "#ffffff",
               fontSize: "13px",
-              cursor: "not-allowed",
+              cursor: "pointer",
             }}
           >
-            📁 기록 저장 (추후)
+            📁 결과 PNG로 저장
           </button>
           <button
             onClick={onGoHome}
@@ -986,10 +1061,8 @@ function PitchChartBox({ f0r, durationSec }) {
 
   const yMax = 24;
   const yMid = 12;
-  const clamped =
-    raw == null ? null : Math.max(0, Math.min(raw, yMax));
-  const display =
-    clamped == null ? "측정 불가" : clamped.toFixed(1);
+  const clamped = raw == null ? null : Math.max(0, Math.min(raw, yMax));
+  const display = clamped == null ? "측정 불가" : clamped.toFixed(1);
 
   const isOutlier = raw != null && raw > yMax;
 
@@ -1233,7 +1306,9 @@ function makeFeedbackLines(m, s, segments = []) {
         "발화 속도가 전체적으로 다소 느립니다. 핵심 문장은 조금 더 경쾌한 속도로 말해보면 전달력이 좋아집니다."
       );
     } else {
-      lines.push("발화 속도가 전체적으로 적절한 편입니다. 현재 속도를 유지해 보세요.");
+      lines.push(
+        "발화 속도가 전체적으로 적절한 편입니다. 현재 속도를 유지해 보세요."
+      );
     }
   }
 
